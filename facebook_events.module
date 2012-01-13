@@ -1,0 +1,120 @@
+<?php
+/**
+ * Facebook: Events support
+ */
+
+/**
+ * Block implementations for Facebook Events.
+ *
+ * Contains the following blocks:
+ *   - Facebook Upcoming Events: Show a list of upcoming events for a configured Facebook entitiy.
+ *
+ * @param string $op
+ *     The operation to perform.
+ * @param string $delta
+ *     The unique identifier of the block.
+ * @param array $data
+ *     The submitted form data for the save operation.
+ *
+ * @return array
+ *     The data required by the operation.
+ *
+ * @seealso hook_block()
+ */
+function facebook_events_block($op = 'list', $delta = '', $data = array()) {
+    switch ($op) {
+    case 'list':
+    default:
+        return array(
+            'upcoming' => array(
+                'info' => t('Facebook: Upcoming events'),
+            )
+        );
+    
+    case 'view':
+        return call_user_func("facebook_events_block_{$delta}_view");
+
+    case 'configure':
+        return call_user_func("facebook_events_block_{$delta}_form");
+
+    case 'save':
+        return call_user_func("facebook_events_block_{$delta}_form_submit", $data);
+    }
+}
+
+/**
+ * Get the content for the Facebook Events block.
+ *
+ * @return array
+ *     The block content.
+ */
+function facebook_events_block_upcoming_view() {
+    $stream = variable_get('facebook_events_block_upcoming_stream', '');
+    // Fallback to Facebook Page setting.
+    if (empty($stream)) {
+        $stream = variable_get('facebook_page', '');
+        $stream = preg_replace('#^(http|https)://www.facebook.com/((pages/.+/)?([a-z0-9\.]+))$#', '$4', $stream);
+    }
+
+    if (empty($stream)) {
+        return FALSE;
+    }
+
+    $settings = array(
+        'stream' => $stream,
+        'limit' => variable_get('facebook_events_block_upcoming_limit', 5),
+        'offset' => variable_get('facebook_events_block_upcoming_offset', 0) * 60 * 60 * 1000,
+    );
+
+    drupal_add_js(array('facebookEventsBlock' => $settings), 'setting');
+    drupal_add_js(drupal_get_path('module', 'facebook_events') . '/facebook_events.js');
+
+    return array(
+        'subject' => t('Upcoming events'),
+        'content' => '<div id="facebook-events-placeholder"></div>',
+    );
+}
+
+/**
+ * Configure the Facebook Events block settings.
+ *
+ * @return array
+ *     The configuration form.
+ */
+function facebook_events_block_upcoming_form() {
+    return array(
+        'facebook_events_block_upcoming_stream' => array(
+            '#type' => 'textfield',
+            '#title' => t('Event stream'),
+            '#default_value' => variable_get('facebook_events_block_upcoming_stream', ''),
+            '#description' => t('The id of a Facebook object that has an events feed. Leave blank to use the default Facebook page configured under <a href="@facebook-settings">Facebook Settings</a>.', array('@facebook-settings', url('admin/settings/facebook'))),
+        ),
+        'facebook_events_block_upcoming_limit' => array(
+            '#type' => 'textfield',
+            '#title' => t('Number of items'),
+            '#default_value' => variable_get('facebook_events_block_upcoming_limit', 5),
+            '#required' => TRUE,
+            '#size' => 5,
+        ),
+        'facebook_events_block_upcoming_offset' => array(
+            '#type' => 'textfield',
+            '#title' => t('Timezone offset'),
+            '#default_value' => variable_get('facebook_events_block_upcoming_offset', 0),
+            '#required' => TRUE,
+            '#size' => 5,
+            '#description' => t('The offset in hours from Pacific Standard Time.'),
+        ),
+    );
+}
+
+/**
+ * Save the configuration settings for the Facebook Events block.
+ *
+ * @param array $data
+ *     The data submitted in the form.
+ */
+function facebook_events_block_upcoming_form_submit($data) {
+    foreach ($data as $key => $value) {
+        variable_set($key, $value);
+    }
+}

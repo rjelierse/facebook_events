@@ -1,0 +1,16 @@
+<?php
+/**
+ * Facebook: Events support - Installation routines.
+ */
+ 
+ /**
+  * Remove all things associated with the module.
+  *
+  * @seealso hook_uninstall()
+  */
+ function facebook_uninstall() {
+     // Facebook Events block settings
+     variable_del('facebook_events_block_upcoming_stream');
+     variable_del('facebook_events_block_upcoming_limit');
+     variable_del('facebook_events_block_upcoming_offset');
+ }

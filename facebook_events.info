@@ -1,0 +1,9 @@
+name = Events
+description = Adds support for events from a Facebook page, group or person.
+core = 6.x
+package = Facebook for Drupal
+
+project = facebook
+version = 6.x-1.0
+
+dependencies[] = facebook
